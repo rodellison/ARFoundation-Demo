@@ -10,7 +10,8 @@ This project utilizes the Asset Store package **Amplify Shader Editor**, which i
 
 ![Project View](./Screen.gif)
 
-###Additional CREDITS
+### **Additional Credits**
+
 As used in The Youtube Tutorial by The Unity Workbench, included in project is the **3D toy plane model** by "Law" (via Sketchfab), generously licensed under the Creative Commons Attribution license.
 
 [Sketchfab model](https://sketchfab.com/3d-models/toy-plane-9b4e13700da14d31b9d923c499e18f64)
