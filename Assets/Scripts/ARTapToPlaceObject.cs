@@ -5,6 +5,7 @@ using UnityEngine.XR.ARFoundation;
 using UnityEngine.Experimental.XR;
 using System;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using TrackableType = UnityEngine.XR.ARSubsystems.TrackableType;
 
 
@@ -14,13 +15,13 @@ public class ARTapToPlaceObject : MonoBehaviour
     public GameObject objectToPlace;
     public GameObject placementIndicator;
     public CanvasGroup theCanvasGroup;
-    
+
     public GameObject theGO;
 
     public Camera ARCamera;
 
     public Pose theContentLocationPose;
-  
+
     private ARRaycastManager _raycastManager;
     private Pose _placementPose;
     private bool _placementPoseIsValid;
@@ -28,10 +29,11 @@ public class ARTapToPlaceObject : MonoBehaviour
     private bool _objectSet;
 
     ARSessionOrigin m_SessionOrigin;
+
     void Awake()
     {
         m_SessionOrigin = GetComponent<ARSessionOrigin>();
-      }
+    }
 
     void Start()
     {
@@ -41,39 +43,39 @@ public class ARTapToPlaceObject : MonoBehaviour
 
     void Update()
     {
- 
-
         if (!_objectSet)
         {
             UpdatePlacementPose();
-            UpdatePlacementIndicator();
-            
+
             // Check if there is a touch
             if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
             {
                 // Check if finger is over a UI element
                 if (EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
                 {
-                    
                 }
                 else
                 {
-                     PlaceObject();
+                    PlaceObject();
                     _objectSet = true;
                     placementIndicator.SetActive(false);
 
-                   //If the Canvas isn't needed anymore, then fade it out, otherwise, just disable the Panel leaving
-                   //the Scale/Rotate sliders visible..
-                   
-                   // StartCoroutine(FadeOutCanvas());
-                    GameObject.FindWithTag("CanvasScalePanel").SetActive(false);
-                    
+                    //If the Canvas isn't needed anymore, then fade it out, otherwise, just disable the Panel leaving
+                    //the Scale/Rotate sliders visible.
+                    // StartCoroutine(FadeOutCanvas());
+
+                    //After user clicks the placement indicator, now show them the scale and rotate sliders to tweak the placed object
+                    GameObject UIPanel = GameObject.FindWithTag("CanvasScalePanel");
+                    var sliders = UIPanel.GetComponentsInChildren<Slider>();
+
+                    foreach (Slider _slider in sliders)
+                        _slider.interactable = true;
                 }
             }
         }
     }
 
-  
+
     IEnumerator FadeOutCanvas()
     {
         var _t = 0f;
@@ -89,7 +91,7 @@ public class ARTapToPlaceObject : MonoBehaviour
         theCanvasGroup.interactable = false;
         theCanvasGroup.blocksRaycasts = false;
     }
-    
+
 
     private void PlaceObject()
     {
@@ -99,26 +101,16 @@ public class ARTapToPlaceObject : MonoBehaviour
     }
 
 
-    private void UpdatePlacementIndicator()
-    {
-        if (_placementPoseIsValid)
-        {
-            placementIndicator.SetActive(true);
-            placementIndicator.transform.SetPositionAndRotation(_placementPose.position, _placementPose.rotation);
-            theContentLocationPose = _placementPose;
-        }
-        else
-        {
-            placementIndicator.SetActive(false);
-        }
-    }
-
-
     private void UpdatePlacementPose()
     {
         var screenCenter = ARCamera.ViewportToScreenPoint(_screenCenterV2);
         var hits = new List<ARRaycastHit>();
+
+#if UNITY_IOS
+        _raycastManager.Raycast(screenCenter, hits, TrackableType.PlaneWithinPolygon | TrackableType.FeaturePoint);
+#else
         _raycastManager.Raycast(screenCenter, hits, TrackableType.Planes);
+#endif
 
         _placementPoseIsValid = hits.Count > 0;
         if (_placementPoseIsValid)
@@ -130,6 +122,14 @@ public class ARTapToPlaceObject : MonoBehaviour
             var cameraForward = Camera.current.transform.forward;
             var cameraBearing = new Vector3(cameraForward.x, 0, cameraForward.z).normalized;
             _placementPose.rotation = Quaternion.LookRotation(cameraBearing);
+
+            placementIndicator.SetActive(true);
+            placementIndicator.transform.SetPositionAndRotation(_placementPose.position, _placementPose.rotation);
+            theContentLocationPose = _placementPose;
+        }
+        else
+        {
+            placementIndicator.SetActive(false);
         }
     }
 }
